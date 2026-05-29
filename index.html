@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Big Win Casino - Lucky Spin Wheel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #FFD700;
+      --gold-dark: #B8860B;
+      --gold-light: #FFF0A0;
+      --red: #e74c3c;
+      --purple: #8e44ad;
+      --bg-dark: #050510;
+      --bg-mid: #0d0d25;
+    }
+
+    body {
+      background: var(--bg-dark);
+      font-family: 'Rajdhani', sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Stars background */
+    #stars-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0;
+    }
+
+    .page-bg {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(139,0,139,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(255,100,0,0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(0,50,150,0.15) 0%, transparent 50%),
+        linear-gradient(180deg, #050510 0%, #0d0520 50%, #050510 100%);
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px 16px 40px;
+      min-height: 100vh;
+    }
+
+    /* Casino neon border lights */
+    .neon-border {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      border: 3px solid transparent;
+      box-shadow:
+        inset 0 0 30px rgba(255,215,0,0.1),
+        inset 0 0 60px rgba(255,100,0,0.05);
+      pointer-events: none; z-index: 2;
+    }
+
+    /* Blinking border dots */
+    .border-lights {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none; z-index: 2;
+      overflow: hidden;
+    }
+    .bl-dot {
+      position: absolute; width: 8px; height: 8px; border-radius: 50%;
+      animation: blDot 0.8s infinite alternate;
+    }
+    @keyframes blDot {
+      from { opacity: 0.2; transform: scale(0.7); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Header */
+    .casino-header {
+      text-align: center; margin-bottom: 8px;
+    }
+
+    .casino-name {
+      font-family: 'Cinzel Decorative', cursive;
+      font-size: clamp(22px, 6vw, 42px);
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(180deg, #FFF8DC 0%, #FFD700 40%, #FFA500 70%, #FF6600 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 20px rgba(255,165,0,0.7));
+      animation: titlePulse 3s ease-in-out infinite;
+      line-height: 1.2;
+    }
+    @keyframes titlePulse {
+      0%, 100% { filter: drop-shadow(0 0 15px rgba(255,165,0,0.5)); }
+      50% { filter: drop-shadow(0 0 30px rgba(255,165,0,0.9)); }
+    }
+
+    .tagline {
+      font-size: 13px; letter-spacing: 6px; color: rgba(255,215,0,0.6);
+      margin-top: 4px; text-transform: uppercase;
+    }
+
+    /* Decorative divider */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; max-width: 500px; margin: 12px 0;
+    }
+    .divider-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,215,0,0.5), transparent);
+    }
+    .divider-diamond {
+      width: 8px; height: 8px; background: var(--gold);
+      transform: rotate(45deg);
+      box-shadow: 0 0 8px rgba(255,215,0,0.8);
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex; gap: 12px; margin-bottom: 20px;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .stat-card {
+      background: rgba(255,215,0,0.05);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 12px;
+      padding: 8px 20px;
+      text-align: center;
+      min-width: 90px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.3s;
+    }
+    .stat-card:hover { border-color: rgba(255,215,0,0.5); }
+    .stat-label { font-size: 10px; letter-spacing: 2px; color: rgba(255,215,0,0.5); text-transform: uppercase; }
+    .stat-value { font-size: 22px; font-weight: 700; color: var(--gold); line-height: 1.2; }
+
+    /* Wheel container */
+    .wheel-container {
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: 20px; position: relative;
+    }
+
+    .wheel-glow-ring {
+      position: absolute;
+      width: 340px; height: 340px; border-radius: 50%;
+      background: transparent;
+      box-shadow:
+        0 0 40px rgba(255,215,0,0.3),
+        0 0 80px rgba(255,100,0,0.15),
+        0 0 120px rgba(255,50,0,0.08);
+      animation: ringPulse 2s ease-in-out infinite;
+      top: 36px;
+    }
+    @keyframes ringPulse {
+      0%, 100% { box-shadow: 0 0 40px rgba(255,215,0,0.3), 0 0 80px rgba(255,100,0,0.15); }
+      50% { box-shadow: 0 0 60px rgba(255,215,0,0.5), 0 0 100px rgba(255,100,0,0.25); }
+    }
+
+    .pointer-wrapper {
+      display: flex; flex-direction: column; align-items: center;
+      z-index: 10; position: relative;
+    }
+    .pointer-arrow {
+      width: 0; height: 0;
+      border-left: 18px solid transparent;
+      border-right: 18px solid transparent;
+      border-top: 42px solid var(--gold);
+      filter: drop-shadow(0 0 12px rgba(255,215,0,0.9));
+      margin-bottom: -4px;
+      animation: pointerBounce 2s ease-in-out infinite;
+    }
+    @keyframes pointerBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    .pointer-base {
+      width: 20px; height: 8px;
+      background: var(--gold-dark);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* THE WHEEL */
+    .wheel-outer {
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      position: relative;
+      border: 6px solid var(--gold);
+      box-shadow:
+        0 0 0 2px rgba(255,215,0,0.3),
+        0 0 0 8px rgba(255,215,0,0.1),
+        0 0 30px rgba(255,165,0,0.5);
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+      cursor: default;
+    }
+    .wheel-canvas {
+      width: 100%; height: 100%;
+      border-radius: 50%;
+    }
+    .wheel-center {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 56px; height: 56px; border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, #FFF8DC, #FFD700 40%, #B8860B);
+      border: 4px solid #fff;
+      box-shadow: 0 0 20px rgba(255,215,0,0.9), 0 0 40px rgba(255,165,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; z-index: 5;
+      animation: centerSpin 8s linear infinite;
+    }
+    @keyframes centerSpin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .wheel-dividers {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      border-radius: 50%; z-index: 2;
+    }
+
+    /* Spin Button */
+    .spin-btn-wrapper {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; margin-top: 8px;
+    }
+    .spin-cost { font-size: 12px; color: rgba(255,215,0,0.4); letter-spacing: 1px; }
+
+    .spin-btn {
+      position: relative; overflow: hidden;
+      padding: 16px 56px;
+      background: linear-gradient(135deg, #FF8C00, #FFD700, #FF8C00);
+      background-size: 200% 100%;
+      border: none; border-radius: 50px;
+      cursor: pointer; font-family: 'Cinzel Decorative', cursive;
+      font-size: 16px; font-weight: 700; color: #1a0800;
+      letter-spacing: 3px; text-transform: uppercase;
+      box-shadow: 0 4px 30px rgba(255,140,0,0.6), 0 0 60px rgba(255,140,0,0.2);
+      transition: all 0.3s;
+      animation: btnShimmer 3s ease-in-out infinite;
+    }
+    @keyframes btnShimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .spin-btn::before {
+      content: ''; position: absolute;
+      top: -50%; left: -60%; width: 50%; height: 200%;
+      background: rgba(255,255,255,0.25);
+      transform: skewX(-20deg);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0% { left: -60%; }
+      100% { left: 160%; }
+    }
+    .spin-btn:hover:not(:disabled) {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 8px 40px rgba(255,140,0,0.8), 0 0 80px rgba(255,140,0,0.3);
+    }
+    .spin-btn:active:not(:disabled) { transform: scale(0.96); }
+    .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+
+    /* Result box */
+    .result-section {
+      width: 100%; max-width: 340px; margin-top: 20px;
+    }
+    .result-box {
+      border-radius: 16px; padding: 18px 24px;
+      background: rgba(255,215,0,0.04);
+      border: 1px solid rgba(255,215,0,0.2);
+      text-align: center; transition: all 0.4s;
+      min-height: 80px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+    .result-label-text {
+      font-size: 11px; letter-spacing: 3px;
+      color: rgba(255,215,0,0.4); margin-bottom: 6px;
+    }
+    .result-amount {
+      font-size: 30px; font-weight: 700;
+      color: var(--gold);
+      transition: all 0.3s;
+    }
+    .result-amount.jackpot {
+      font-family: 'Cinzel Decorative', cursive;
+      font-size: 24px;
+      background: linear-gradient(90deg, #FFD700, #FFF, #FFD700);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; animation: jackpotFlash 0.3s ease 5;
+    }
+    @keyframes jackpotFlash {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(2); }
+    }
+    .result-amount.bankrupt { color: #e74c3c; font-family: 'Cinzel Decorative', cursive; font-size: 22px; }
+    .result-amount.win-anim { animation: winBounce 0.4s ease 3; }
+    @keyframes winBounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    /* Segment info */
+    .segment-info {
+      margin-top: 12px;
+      display: flex; gap: 8px; align-items: center; justify-content: center;
+      font-size: 13px; color: rgba(255,255,255,0.5);
+    }
+    .segment-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+
+    /* History */
+    .history-section {
+      width: 100%; max-width: 340px; margin-top: 16px;
+    }
+    .history-title {
+      font-size: 10px; letter-spacing: 3px;
+      color: rgba(255,215,0,0.3); text-align: center;
+      margin-bottom: 10px; text-transform: uppercase;
+    }
+    .history-list {
+      display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+    }
+    .h-chip {
+      font-size: 12px; font-weight: 700; padding: 4px 12px;
+      border-radius: 20px; letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+    .h-chip.jackpot { background: rgba(255,215,0,0.2); color: #FFD700; border: 1px solid rgba(255,215,0,0.5); }
+    .h-chip.big { background: rgba(255,120,0,0.15); color: #FFA500; border: 1px solid rgba(255,120,0,0.3); }
+    .h-chip.small { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); }
+    .h-chip.bust { background: rgba(231,76,60,0.12); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+
+    /* Confetti */
+    .confetti-wrap {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 999; overflow: hidden;
+    }
+    .cf {
+      position: absolute; border-radius: 2px;
+      animation: cfFall linear forwards;
+    }
+    @keyframes cfFall {
+      0% { transform: translateY(-30px) rotate(0deg) scale(1); opacity: 1; }
+      80% { opacity: 1; }
+      100% { transform: translateY(105vh) rotate(600deg) scale(0.5); opacity: 0; }
+    }
+
+    /* Low coin warning */
+    .low-coin-msg {
+      color: #e74c3c; font-size: 13px; letter-spacing: 1px;
+      margin-top: 6px; animation: blink 1s infinite;
+      display: none;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .low-coin-msg.show { display: block; }
+
+    /* Responsive */
+    @media (max-width: 380px) {
+      .wheel-outer { width: 260px; height: 260px; }
+      .wheel-glow-ring { width: 300px; height: 300px; }
+      .spin-btn { padding: 14px 40px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-bg"></div>
+<canvas id="stars-canvas"></canvas>
+<div class="border-lights" id="borderLights"></div>
+<div class="neon-border"></div>
+
+<div class="confetti-wrap" id="confettiWrap"></div>
+
+<div class="wrapper">
+
+  <div class="casino-header">
+    <div class="casino-name">BIG WIN CASINO</div>
+    <div class="tagline">Lucky Spin &nbsp;·&nbsp; Bada Jeeto</div>
+  </div>
+
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-diamond"></div>
+    <div class="divider-line"></div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">💰 Coins</div>
+      <div class="stat-value" id="coinsVal">1000</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">🎰 Spins</div>
+      <div class="stat-value" id="spinsVal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">⭐ Best</div>
+      <div class="stat-value" id="bestVal">0</div>
+    </div>
+  </div>
+
+  <div class="wheel-container">
+    <div class="wheel-glow-ring"></div>
+    <div class="pointer-wrapper">
+      <div class="pointer-arrow"></div>
+      <div class="pointer-base"></div>
+    </div>
+    <div class="wheel-outer" id="wheel">
+      <canvas class="wheel-canvas" id="wheelCanvas" width="300" height="300"></canvas>
+      <div class="wheel-center">★</div>
+    </div>
+  </div>
+
+  <div class="spin-btn-wrapper">
+    <button class="spin-btn" id="spinBtn" onclick="spinWheel()">SPIN!</button>
+    <div class="spin-cost">Har Spin = 50 Coins</div>
+    <div class="low-coin-msg" id="lowMsg">⚠️ Coins khatam! Reload karo</div>
+  </div>
+
+  <div class="result-section">
+    <div class="result-box" id="resultBox">
+      <div class="result-label-text">RESULT</div>
+      <div class="result-amount" id="resultAmount">🎰 Spin karo aur jeeto!</div>
+    </div>
+    <div class="segment-info" id="segInfo"></div>
+  </div>
+
+  <div class="history-section" id="historySection" style="display:none">
+    <div class="history-title">— Recent Spins —</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+</div>
+
+<script>
+  /* ── Segments ── */
+  const SEGMENTS = [
+    { label: "JACKPOT",  emoji: "⭐", prize: 5000, color: "#f1c40f", text: "#4a3800", type: "jackpot" },
+    { label: "500",      emoji: "🎁", prize: 500,  color: "#e67e22", text: "#fff",    type: "big"     },
+    { label: "BANKRUPT", emoji: "💀", prize: 0,    color: "#c0392b", text: "#fff",    type: "bust"    },
+    { label: "1000",     emoji: "🔥", prize: 1000, color: "#2980b9", text: "#fff",    type: "big"     },
+    { label: "200",      emoji: "💎", prize: 200,  color: "#27ae60", text: "#fff",    type: "small"   },
+    { label: "750",      emoji: "🎯", prize: 750,  color: "#8e44ad", text: "#fff",    type: "big"     },
+    { label: "BANKRUPT", emoji: "💀", prize: 0,    color: "#922b21", text: "#fff",    type: "bust"    },
+    { label: "100",      emoji: "✨", prize: 100,  color: "#1abc9c", text: "#fff",    type: "small"   },
+  ];
+
+  let coins = 1000, spins = 0, bestWin = 0;
+  let currentRotation = 0, spinning = false;
+  const history = [];
+
+  /* ── Draw Wheel ── */
+  function drawWheel() {
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width, H = canvas.height;
+    const cx = W / 2, cy = H / 2, r = W / 2 - 4;
+    const arc = (2 * Math.PI) / SEGMENTS.length;
+
+    SEGMENTS.forEach((seg, i) => {
+      const start = arc * i - Math.PI / 2;
+      const end = start + arc;
+
+      /* Slice */
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, end);
+      ctx.closePath();
+      ctx.fillStyle = seg.color;
+      ctx.fill();
+
+      /* Thin border */
+      ctx.strokeStyle = "rgba(0,0,0,0.4)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      /* Gold rim lines */
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + r * Math.cos(start), cy + r * Math.sin(start));
+      ctx.strokeStyle = "rgba(255,215,0,0.5)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+
+      /* Text */
+      const mid = start + arc / 2;
+      const tx = cx + (r * 0.62) * Math.cos(mid);
+      const ty = cy + (r * 0.62) * Math.sin(mid);
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(mid + Math.PI / 2);
+      ctx.fillStyle = seg.text;
+      ctx.font = "bold 12px 'Rajdhani', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(seg.emoji, 0, -10);
+      ctx.font = "bold 11px 'Rajdhani', sans-serif";
+      ctx.fillText(seg.label, 0, 4);
+      ctx.restore();
+    });
+
+    /* Outer gold ring */
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+    ctx.strokeStyle = "#FFD700";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    /* Inner circle mask for center hub */
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
+    ctx.fillStyle = "#B8860B";
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  /* ── Stars ── */
+  function initStars() {
+    const canvas = document.getElementById("stars-canvas");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext("2d");
+    for (let i = 0; i < 200; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const r = Math.random() * 1.5 + 0.3;
+      const alpha = Math.random() * 0.8 + 0.2;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fill();
+    }
+  }
+
+  /* ── Border lights ── */
+  function initBorderLights() {
+    const el = document.getElementById("borderLights");
+    const colors = ["#FFD700","#FF4500","#00FF9F","#FF69B4","#00BFFF","#FF8C00"];
+    const count = 24;
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement("div");
+      dot.className = "bl-dot";
+      const c = colors[i % colors.length];
+      const pct = (i / count) * 100;
+      let top, left;
+      if (i < count / 4) { top = "2px"; left = (pct * 4) + "%"; }
+      else if (i < count / 2) { top = ((pct - 25) * 4) + "%"; left = "calc(100% - 10px)"; }
+      else if (i < (count * 3) / 4) { top = "calc(100% - 10px)"; left = (100 - (pct - 50) * 4) + "%"; }
+      else { top = (100 - (pct - 75) * 4) + "%"; left = "2px"; }
+      dot.style.cssText = `top:${top};left:${left};background:${c};box-shadow:0 0 6px ${c};animation-delay:${i * 0.06}s`;
+      el.appendChild(dot);
+    }
+  }
+
+  /* ── Spin ── */
+  function spinWheel() {
+    if (spinning) return;
+    if (coins < 50) {
+      document.getElementById("lowMsg").classList.add("show");
+      return;
+    }
+    document.getElementById("lowMsg").classList.remove("show");
+    coins -= 50;
+    spins++;
+    updateStats();
+    spinning = true;
+    document.getElementById("spinBtn").disabled = true;
+
+    const segCount = SEGMENTS.length;
+    const extraSpins = 6 + Math.floor(Math.random() * 5);
+    const targetIdx = Math.floor(Math.random() * segCount);
+    const segAngle = 360 / segCount;
+    const offset = segAngle * 0.5;
+    const stopAt = 360 - (targetIdx * segAngle + offset);
+    const totalRotation = extraSpins * 360 + stopAt;
+
+    currentRotation += totalRotation;
+    const wheel = document.getElementById("wheel");
+    wheel.style.transition = "transform 4.5s cubic-bezier(0.17, 0.67, 0.10, 0.99)";
+    wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+    setTimeout(() => {
+      spinning = false;
+      document.getElementById("spinBtn").disabled = false;
+      showResult(SEGMENTS[targetIdx]);
+    }, 4700);
+  }
+
+  /* ── Show Result ── */
+  function showResult(seg) {
+    const box = document.getElementById("resultBox");
+    const amount = document.getElementById("resultAmount");
+    const segInfo = document.getElementById("segInfo");
+
+    amount.className = "result-amount";
+
+    if (seg.type === "jackpot") {
+      coins += seg.prize;
+      if (seg.prize > bestWin) bestWin = seg.prize;
+      amount.textContent = "⭐ JACKPOT! +" + seg.prize.toLocaleString();
+      amount.classList.add("jackpot");
+      box.style.borderColor = "rgba(255,215,0,0.8)";
+      box.style.background = "rgba(255,215,0,0.1)";
+      launchConfetti(100);
+    } else if (seg.type === "bust") {
+      amount.textContent = "💀 BANKRUPT!";
+      amount.classList.add("bankrupt");
+      box.style.borderColor = "rgba(231,76,60,0.6)";
+      box.style.background = "rgba(231,76,60,0.05)";
+    } else {
+      coins += seg.prize;
+      if (seg.prize > bestWin) bestWin = seg.prize;
+      amount.textContent = "🎊 JIT GAYE! +" + seg.prize.toLocaleString();
+      amount.classList.add("win-anim");
+      box.style.borderColor = "rgba(255,215,0,0.5)";
+      box.style.background = "rgba(255,215,0,0.06)";
+      if (seg.prize >= 500) launchConfetti(40);
+    }
+
+    segInfo.innerHTML = `<span class="segment-dot" style="background:${seg.color}"></span> ${seg.emoji} ${seg.label} segment`;
+    addHistory(seg);
+    updateStats();
+  }
+
+  function updateStats() {
+    document.getElementById("coinsVal").textContent = coins.toLocaleString();
+    document.getElementById("spinsVal").textContent = spins;
+    document.getElementById("bestVal").textContent = bestWin.toLocaleString();
+  }
+
+  function addHistory(seg) {
+    history.unshift(seg);
+    if (history.length > 10) history.pop();
+    const section = document.getElementById("historySection");
+    const list = document.getElementById("historyList");
+    section.style.display = "block";
+    list.innerHTML = "";
+    history.forEach(h => {
+      const chip = document.createElement("span");
+      chip.className = `h-chip ${h.type}`;
+      chip.textContent = h.type === "bust" ? "💀 0" : `+${h.prize.toLocaleString()}`;
+      list.appendChild(chip);
+    });
+  }
+
+  /* ── Confetti ── */
+  function launchConfetti(n) {
+    const wrap = document.getElementById("confettiWrap");
+    wrap.innerHTML = "";
+    const cols = ["#FFD700","#FF4500","#00FF9F","#FF69B4","#00BFFF","#FF8C00","#ffffff","#FFA500","#FF1493"];
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement("div");
+      p.className = "cf";
+      const c = cols[Math.floor(Math.random() * cols.length)];
+      const sz = 6 + Math.random() * 10;
+      const dur = 1.5 + Math.random() * 2.5;
+      const delay = Math.random() * 0.8;
+      p.style.cssText = `left:${Math.random()*100}%;background:${c};width:${sz}px;height:${sz}px;border-radius:${Math.random()>0.5?"50%":"2px"};animation-duration:${dur}s;animation-delay:${delay}s`;
+      wrap.appendChild(p);
+    }
+    setTimeout(() => wrap.innerHTML = "", 5000);
+  }
+
+  /* ── Init ── */
+  initStars();
+  initBorderLights();
+  drawWheel();
+</script>
+</body>
+</html>
